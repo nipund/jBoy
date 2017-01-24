@@ -10,7 +10,11 @@ public class MMU {
 		return 0;
 	}
 	
-	public static void wb(int b, int addr) {
+	public static void wb(int addr, int b) {
+		
+	}
+	
+	public static void ww(int addr, int b) {
 		
 	}
 

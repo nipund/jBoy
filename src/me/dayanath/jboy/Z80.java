@@ -17,8 +17,8 @@ public class Z80 {
 	 */
 	private int pc, sp;
 
-	private void ADD(int dest, int add) {
-		reg_8[dest] += reg_8[add];
+	private void ADD(int reg0, int reg1) {
+		/*reg_8[dest] += reg_8[add];
 		reg_8[7] = 0;
 		if ((reg_8[dest] & 255) == 0)
 			reg_8[7] |= 0x80;
@@ -26,7 +26,7 @@ public class Z80 {
 			reg_8[7] |= 0x10;
 		reg_8[dest] &= 255;
 		m = 1;
-		t = 4;
+		t = 4;*/
 	}
 
 	private void NOP() {
@@ -79,6 +79,43 @@ public class Z80 {
 		t = 8;
 	}
 	
+	private void RLCA() {
+		int ci = (reg_8[0] & 0x80) != 0 ? 1 : 0;
+		int co = (reg_8[0] & 0x80) != 0 ? 0x10 : 0;
+		reg_8[0] = (reg_8[0] << 1) + ci;
+		reg_8[0] &= 255;
+		reg_8[7] = (reg_8[7] & 0xEF) + co;
+		m = 1;
+		t = 4;
+	}
+	
+	private void LDnnSP() {
+		MMU.ww((MMU.rb(pc) << 8) + MMU.rb(pc+1), sp);
+		pc += 2;
+		m = 5;
+		t = 20;
+	}
+	
+	private void ADDHLXX(int reg0, int reg1) {
+		int hl = (reg_8[5] << 8) + reg_8[6];
+		hl += (reg_8[reg0] << 8) + reg_8[reg1];
+		if(hl > 65535) {
+			reg_8[7] |= 0x10;
+		} else {
+			reg_8[7] &= 0xEF;
+		}
+		reg_8[5] = (hl >> 8) & 255;
+		reg_8[6] = hl & 255;
+		m = 3;
+		t = 12;
+	}
+	
+	private void LDAXXm(int reg0, int reg1) {
+		reg_8[0] = MMU.rb((reg_8[reg0] << 8) + reg_8[reg1]);
+		m = 2;
+		t = 8;
+	}
+	
 	private void fz(int i) {
 		reg_8[7] = 0;
 		if ((i & 255) != 0)
@@ -91,7 +128,7 @@ public class Z80 {
 	}
 
 	private void op(int opcode) {
-		switch (opcode) {
+		switch (opcode & 0xFF) {
 		case 0x00:
 			NOP();
 			break;
@@ -114,12 +151,16 @@ public class Z80 {
 			LDrn_X(1); // LDrn_b
 			break;
 		case 0x07:
+			RLCA();
 			break;
 		case 0x08:
+			LDnnSP();
 			break;
 		case 0x09:
+			ADDHLXX(1, 2);
 			break;
 		case 0x0A:
+			LDAXXm(1, 2);
 			break;
 		case 0x0B:
 			break;
