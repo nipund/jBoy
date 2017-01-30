@@ -55,6 +55,14 @@ public class Z80 {
 		m = 1;
 		t = 4;
 	}
+	
+	private void DECXX(int reg0, int reg1) {
+		reg_8[reg1] = (reg_8[reg1] - 1) & 255;
+		if (reg_8[reg1] == 255)
+			reg_8[reg0] = (reg_8[reg0] - 1) & 255;
+		m = 1;
+		t = 4;
+	}
 
 	private void INCr_X(int reg) {
 		reg_8[reg]++;
@@ -89,6 +97,16 @@ public class Z80 {
 		t = 4;
 	}
 	
+	private void RRCA() {
+		int ci = (reg_8[0] & 1) != 0 ? 0x80 : 0;
+		int co = (reg_8[0] & 1) != 0 ? 0x10 : 0;
+		reg_8[0] = (reg_8[0] >> 1) + ci;
+		reg_8[0] &= 255;
+		reg_8[7] = (reg_8[7] & 0xEF) + co;
+		m = 1;
+		t = 4;
+	}
+	
 	private void LDnnSP() {
 		MMU.ww((MMU.rb(pc) << 8) + MMU.rb(pc+1), sp);
 		pc += 2;
@@ -112,6 +130,26 @@ public class Z80 {
 	
 	private void LDAXXm(int reg0, int reg1) {
 		reg_8[0] = MMU.rb((reg_8[reg0] << 8) + reg_8[reg1]);
+		m = 2;
+		t = 8;
+	}
+	
+	/*private void DJNZn() {
+		int i = MMU.rb(Z80._r.pc);
+		if(i>127) i=-((~i+1)&255);
+		Z80._r.pc++;
+		Z80._r.m=2;
+		Z80._r.t=8;
+		Z80._r.b--;
+		if(Z80._r.b) {
+			Z80._r.pc+=i;
+			Z80._r.m++;
+			Z80._r.t+=4;
+		}
+	}*/
+	
+	private void STOP() {
+		pc++;
 		m = 2;
 		t = 8;
 	}
@@ -163,26 +201,37 @@ public class Z80 {
 			LDAXXm(1, 2);
 			break;
 		case 0x0B:
+			DECXX(1, 2);
 			break;
 		case 0x0C:
+			INCr_X(2);
 			break;
 		case 0x0D:
+			DECr_X(2);
 			break;
 		case 0x0E:
+			LDrn_X(2);
 			break;
 		case 0x0F:
+			RRCA();
 			break;
 		case 0x10:
+			STOP();
 			break;
 		case 0x11:
+			LDXXnn(3, 4);
 			break;
 		case 0x12:
+			LDXXmA(3, 4);
 			break;
 		case 0x13:
+			INCXX(3, 4);
 			break;
 		case 0x14:
+			INCr_X(3);
 			break;
 		case 0x15:
+			DECr_X(3);
 			break;
 		case 0x16:
 			break;
